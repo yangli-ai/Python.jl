@@ -2,6 +2,7 @@ module Python
 
 using PyCall
 using REPL
+import PyCall: pyimport, pygui_start
 import REPL:LineEdit
 
 export pymain, @pyput, @pyget, @py, py_choosegui
