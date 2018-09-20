@@ -2,7 +2,8 @@
 
 ![example](Python.png)
 ## Installation
-`Pkg.add("https://github.com/229668880/Python.jl.git")`
+Firstly, make sure PyCall.jl work well, then
+`(v1.0) pkg> add https://github.com/229668880/Python.jl.git`
 
 ## Usage
 
