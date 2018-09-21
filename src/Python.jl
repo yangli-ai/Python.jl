@@ -5,15 +5,17 @@ using REPL
 import PyCall: pyimport, pygui_start, PyObject, pycall, pyeval, pyexists
 import REPL:LineEdit
 
-export @pyput, @pyget, @py, @p, py_choosegui, pymain
+export @pyput, @pyget, @py, @p, py_choosegui, py, pymain
 
 global const pymain = PyNULL() #Ref{PyObject}()  
+global const py=PyNULL()
 
 function __init__()
 	active_repl=Base.active_repl;
     main_mode=active_repl.interface.modes[1]
     main_mode.keymap_dict = LineEdit.keymap_merge(main_mode.keymap_dict,pykeys)
 	copy!(pymain, pyimport("__main__") )
+	py=deepcopy(pymain)
 	pymain[:juliatemp]="import matplotlib.pyplot as plt\nfrom matplotlib.pylab import *\nplt.ion()\n"
 	py"exec(juliatemp)"
     pymain[:juliagui]="qt5"
@@ -29,17 +31,18 @@ function py_choosegui(gui=:qt5)
     end
 end
 
-macro pyput(args...) 
-    for a in args                        
-         eval(Meta.parse("pymain[:$a]=$a")) 
-    end                              
-end    
- 
-macro pyget(args...)
-    for a in args                        
-         eval(Meta.parse("$a=pymain[:$a]")) 
-    end    
-end
+# will complete this part
+## macro pyput(args...) 
+##     for a in args                        
+##          eval(Meta.parse("pymain[:$a]=$a")) 
+##     end                              
+## end    
+##  
+## macro pyget(args...)
+##     for a in args                        
+##          eval(Meta.parse("$a=pymain[:$a]")) 
+##     end    
+## end
 
 macro py(args...)
     script=join([string(i) for i in args]," ")
