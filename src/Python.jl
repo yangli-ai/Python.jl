@@ -5,7 +5,7 @@ using REPL
 import PyCall: pyimport, pygui_start, PyObject, pycall, pyeval, pyexists
 import REPL:LineEdit
 
-export @pyput, @pyget, @py, @p, py_choosegui, py, pymain
+export  @py, py_choosegui, py, pymain
 
 global const pymain = PyNULL() #Ref{PyObject}()  
 global const py=PyNULL()
@@ -31,7 +31,7 @@ function py_choosegui(gui=:qt5)
     end
 end
 
-# will complete this part
+# will complete this part. You put this part into startup.jl to use these two functions
 ## macro pyput(args...) 
 ##     for a in args                        
 ##          eval(Meta.parse("pymain[:$a]=$a")) 

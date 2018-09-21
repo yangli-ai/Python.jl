@@ -16,12 +16,12 @@ Run `using Python` and start Python at backend, then:
 
 2. __Python REPL__: type `Ctrl+)` in empty `julia>` to enter Python REPL, and input any Python codes as you do in in Python command-line interface. You can switch back to Julia REPL by `backspace`.
 
-3. __Transfer data between two REPL__: In Julia REPL, you can use `@pyput a b` to put variables a and b into Python backend, and use `@pyget c d` to get variables c and d from Python. Please note that introducing new variables will overwrite existed variables with the same names. In Python REPL, `$a+100` will use variable a in Julia.
+3. __Transfer data between two REPL__: In Julia REPL, use `a=py[:b]` to copy `b` in Python to `a` in Julia, and `py[:c]=d` to copy `d` in Julia to `c` in Python. Operations like `100*py[:b]` are allowed. In Python REPL, `$d+100` causes the same effect.
 
 4. __Plotting__: After `using Python` initializes, Python codes `from matplotlib.pylab import *` and `import matplotlib.pyplot as plt` have been executed in Python backend,so you can plot with typing`plot(randn(100))`. Plotting functionalities are only based on PyCall.jl, independent of PyPlot.jl, and  let you plot freely as in IPython. Python.jl works well with Qt5, and maybe need `show()` function to display plotting window for unknown reason.
 
 **Note:**
-If plotting doesn't work, try to `pip3 install pyqt5` and make sure Qt5 is your plotting backend in Python.
+If plotting doesn't work, try to `pip3 install pyqt5` and make sure Qt5 is your plotting backend in Python. If there is any unpredicted errors, try `using PyCall` before your operation.
 
 ## Requirements
 
