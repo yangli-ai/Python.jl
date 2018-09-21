@@ -2,21 +2,22 @@ module Python
 
 using PyCall
 using REPL
-import PyCall: pyimport, pygui_start
+import PyCall: pyimport, pygui_start, PyObject, pycall, pyeval, pyexists
 import REPL:LineEdit
 
-export pymain, @pyput, @pyget, @py, py_choosegui
+export @pyput, @pyget, @py, @p, py_choosegui, pymain
 
-const pymain=pyimport("__main__")
+global const pymain = PyNULL() #Ref{PyObject}()  
 
 function __init__()
-    pymain[:juliatemp]="import matplotlib.pyplot as plt\nfrom matplotlib.pylab import *\nplt.ion()\n"
-    py"exec(juliatemp)"
-    pymain[:juliagui]="qt5"
-    pygui_start(:qt5)
 	active_repl=Base.active_repl;
     main_mode=active_repl.interface.modes[1]
     main_mode.keymap_dict = LineEdit.keymap_merge(main_mode.keymap_dict,pykeys)
+	copy!(pymain, pyimport("__main__") )
+	pymain[:juliatemp]="import matplotlib.pyplot as plt\nfrom matplotlib.pylab import *\nplt.ion()\n"
+	py"exec(juliatemp)"
+    pymain[:juliagui]="qt5"
+    pygui_start(:qt5)
 	nothing
 end
 
@@ -29,35 +30,46 @@ function py_choosegui(gui=:qt5)
 end
 
 macro pyput(args...) 
-    if !@isdefined pymain
-       global pymain=pyimport("__main__")	
-	end
     for a in args                        
          eval(Meta.parse("pymain[:$a]=$a")) 
     end                              
 end    
  
 macro pyget(args...)
-    if !@isdefined pymain
-       global pymain=pyimport("__main__")	
-	end
     for a in args                        
          eval(Meta.parse("$a=pymain[:$a]")) 
     end    
 end
 
 macro py(args...)
-    juliatemp=join([string(i) for i in args]," ")
-	try
-	  if occursin(r"^\w*$",juliatemp)
-         pymain[:juliatemp]=string("print(",juliatemp,")")
-	  else
-         pymain[:juliatemp]=juliatemp
-	  end
-	  py"exec(juliatemp)"
-	catch err
-	  print(err.val)
-	end
+    script=join([string(i) for i in args]," ")
+      try
+         if occursin(r"^\w*$",script)
+             pymain[:juliatemp]=string("print(",script,")")
+             py"exec(juliatemp)"
+        elseif occursin("\$", script)
+		     script2=string(args...)
+             script2=replace(script2,r"\(Expr\(\:\$, :(?<arg>\w*)\)\)"=>s"\g<1>")
+             reg=r"\$(\w*)"   
+             vars=String[]    
+             m=collect(eachmatch(reg, script2)) 
+             vars=[replace(x.match, "\$"=>"")  for x in m]   
+             for x in vars
+                   eval(Meta.parse("pymain[:$x]=Main.$x"))
+             end
+             pymain[:juliatemp]=replace(script2,"\$"=>"")
+             py"exec(juliatemp)"
+             for x in vars
+                   pymain[:juliatemp]="del $x"
+                   py"exec(juliatemp)"
+             end
+        else
+             pymain[:juliatemp]=script
+             py"exec(juliatemp)"
+        end
+      catch err
+          print(err.val)
+      end
 end
 
 function parse_status(script::String)
@@ -123,16 +135,16 @@ end
 
 function create_py_repl(repl,main)
     py_mode = LineEdit.Prompt("Python> ";
-        prompt_prefix=Base.text_colors[:blue],
-		prompt_suffix=main.prompt_suffix,
-        sticky=true)
+                 prompt_prefix=Base.text_colors[:blue],
+                 prompt_suffix=main.prompt_suffix,
+                 sticky=true)
     hp = main.hist
     hp.mode_mapping[:py] = py_mode
     py_mode.hist = hp
     py_mode.complete = PyCompletionProvider(repl)
     py_mode.on_enter = (s) -> begin
-        status = parse_status(String(take!(copy(LineEdit.buffer(s)))))
-        status == :ok || status == :error
+            status = parse_status(String(take!(copy(LineEdit.buffer(s)))))
+            status == :ok || status == :error
     end
     py_mode.on_done = (s, buf, ok) -> begin
         if !ok
@@ -140,32 +152,32 @@ function create_py_repl(repl,main)
         end
         script = String(take!(buf))
         if !isempty(strip(script))
-		    REPL.reset(repl)
-			try
-			    if lastindex(script)>=6 && script[1:6]=="@jlget"
-				       args=strip(script[7:end])
-					   for a in split(args," ",keepempty=false)
-					      a=strip(a)
-                          eval(Meta.parse("pymain[:$a]=$a")) 
-                       end
-                       #@pyput strip(script[7:end])
-                elseif lastindex(script)>=6 && script[1:6]=="@jlput"
-				       args=strip(script[7:end])
-                       for a in split(args," ",keepempty=false)
-                          a=strip(a)
-                          eval(Meta.parse("$a=pymain[:$a]")) 
-                       end
-                       #@pyget strip(script[7:end])
-                elseif occursin(r"^\w*$",script)
-				       pymain[:juliatemp]=string("print(",script,")")
-					   py"exec(juliatemp)"
-                else
-				       pymain[:juliatemp]=script
-                       py"exec(juliatemp)"
-			    end
-			catch err
-                print(err.val)
-			end
+		       REPL.reset(repl)
+               try
+			       if occursin('$', script)
+				         reg=r"\$(\w*)"   
+				         vars= String[]
+				         m=collect(eachmatch(reg, script)) 
+						 vars=[replace(x.match, "\$"=>"")  for x in m]   
+						 for x in vars
+				              eval(Meta.parse("pymain[:$x]=Main.$x"))
+                         end
+                         pymain[:juliatemp]=replace(script,"\$"=>"")
+					     py"exec(juliatemp)"
+                         for x in vars
+				              pymain[:juliatemp]="del $x"
+							  py"exec(juliatemp)"
+                         end
+                  elseif occursin(r"^\w*$",script)
+				         pymain[:juliatemp]=string("print(",script,")")
+					     py"exec(juliatemp)"
+                  else
+				         pymain[:juliatemp]=script
+                         py"exec(juliatemp)"
+			      end
+              catch err
+                  print(err)
+              end
         end
 		REPL.prepare_next(repl)
         REPL.reset_state(s)
