@@ -41,7 +41,7 @@ end
  # will complete @pyget. You can put this part into startup.jl to use these two functions
  macro pyget(args...)
      for a in args                        
-          Base.eval(Meta.parse("Main.$a=Main.deepcopy(Python.pymain[:$a])")) 
+          Base.eval(Meta.parse("Main.$a=Main.deepcopy(pymain[:$a])")) 
      end    
  end
 
