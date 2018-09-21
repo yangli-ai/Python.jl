@@ -152,32 +152,32 @@ function create_py_repl(repl,main)
         end
         script = String(take!(buf))
         if !isempty(strip(script))
-		       REPL.reset(repl)
-               try
-			       if occursin('$', script)
-				         reg=r"\$(\w*)"   
-				         vars= String[]
-				         m=collect(eachmatch(reg, script)) 
-						 vars=[replace(x.match, "\$"=>"")  for x in m]   
-						 for x in vars
-				              eval(Meta.parse("pymain[:$x]=Main.$x"))
-                         end
-                         pymain[:juliatemp]=replace(script,"\$"=>"")
-					     py"exec(juliatemp)"
-                         for x in vars
-				              pymain[:juliatemp]="del $x"
-							  py"exec(juliatemp)"
-                         end
-                  elseif occursin(r"^\w*$",script)
-				         pymain[:juliatemp]=string("print(",script,")")
-					     py"exec(juliatemp)"
-                  else
-				         pymain[:juliatemp]=script
-                         py"exec(juliatemp)"
-			      end
-              catch err
-                  print(err)
-              end
+	REPL.reset(repl)
+        try
+             if occursin('$', script)
+                  reg=r"\$(\w*)"   
+                  vars= String[]
+                  m=collect(eachmatch(reg, script)) 
+                  vars=[replace(x.match, "\$"=>"")  for x in m]   
+                  for x in vars
+                       eval(Meta.parse("pymain[:$x]=Main.$x"))
+                  end
+                  pymain[:juliatemp]=replace(script,"\$"=>"")
+                  py"exec(juliatemp)"
+                  for x in vars
+                        pymain[:juliatemp]="del $x"
+                        py"exec(juliatemp)"
+                  end
+             elseif occursin(r"^\w*$",script)
+                  pymain[:juliatemp]=string("print(",script,")")
+                  py"exec(juliatemp)"
+             else
+                  pymain[:juliatemp]=script
+                  py"exec(juliatemp)"
+             end
+          catch err
+              print(err)
+          end
         end
 		REPL.prepare_next(repl)
         REPL.reset_state(s)
@@ -207,17 +207,17 @@ end
 const pykeys = Dict{Any,Any}(
     ")"=> (s,o...)->(
 	     if isempty(s) || position(LineEdit.buffer(s)) == 0
-		    repl = Base.active_repl
-			mirepl = isdefined(repl,:mi) ? repl.mi : repl
-			main_mode = mirepl.interface.modes[1]
-            py_mode = create_py_repl(repl,main_mode)
-            buf = copy(LineEdit.buffer(s))
-            LineEdit.transition(s,py_mode) do
-               LineEdit.state(s,py_mode).input_buffer = buf
-            end
-         else
-            LineEdit.edit_insert(s, ')')
-         end
+                  repl = Base.active_repl
+                  mirepl = isdefined(repl,:mi) ? repl.mi : repl
+                  main_mode = mirepl.interface.modes[1]
+                  py_mode = create_py_repl(repl,main_mode)
+                  buf = copy(LineEdit.buffer(s))
+                  LineEdit.transition(s,py_mode) do
+                  LineEdit.state(s,py_mode).input_buffer = buf
+                 end
+           else
+              LineEdit.edit_insert(s, ')')
+           end
 		  ),
 )
 
