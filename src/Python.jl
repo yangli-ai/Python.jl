@@ -5,7 +5,7 @@ using REPL
 import PyCall: pyimport, pygui_start, PyObject, pycall, pyeval, pyexists
 import REPL:LineEdit
 
-export  @py, py_choosegui, py, pymain
+export  @py, @pyput, @pyget, py_choosegui, py, pymain
 
 global const pymain = PyNULL() #Ref{PyObject}()  
 global const py=PyNULL()
@@ -15,7 +15,7 @@ function __init__()
     main_mode=active_repl.interface.modes[1]
     main_mode.keymap_dict = LineEdit.keymap_merge(main_mode.keymap_dict,pykeys)
 	copy!(pymain, pyimport("__main__") )
-	py=deepcopy(pymain)
+	copy!(py, pyimport("__main__") )
 	pymain[:juliatemp]="import matplotlib.pyplot as plt\nfrom matplotlib.pylab import *\nplt.ion()\n"
 	py"exec(juliatemp)"
     pymain[:juliagui]="qt5"
@@ -31,18 +31,19 @@ function py_choosegui(gui=:qt5)
     end
 end
 
-# will complete this part. You put this part into startup.jl to use these two functions
-## macro pyput(args...) 
-##     for a in args                        
-##          eval(Meta.parse("pymain[:$a]=$a")) 
-##     end                              
-## end    
-##  
-## macro pyget(args...)
-##     for a in args                        
-##          eval(Meta.parse("$a=pymain[:$a]")) 
-##     end    
-## end
+
+ macro pyput(args...) 
+     for a in args                        
+          eval(Meta.parse("pymain[:$a]=Main.$a")) 
+     end                              
+ end    
+ 
+ # will complete @pyget. You can put this part into startup.jl to use these two functions
+ macro pyget(args...)
+     for a in args                        
+          Base.eval(Meta.parse("Main.$a=Main.deepcopy(Python.pymain[:$a])")) 
+     end    
+ end
 
 macro py(args...)
     script=join([string(i) for i in args]," ")
