@@ -8,7 +8,7 @@ Python.jl can work with Julia 1.0 and Python 3 on Windows.
 
 ## Usage
 
-Python.jl is only based on PyCall.jl, and help to use Python native codes freely (include plotting with matplotlib) in Julia REPL or provide Python REPL as you do in Python command-line interface. Python.jl will work properly if Pycall.jl works well with Python. It doesn't need any more installation and configuration.
+Python.jl is only based on PyCall.jl, and helps to use Python native codes freely (include plotting with matplotlib) in Julia's REPL or by providing a Python REPL mode for running code as you do in Python's command-line interface. Python.jl will work properly if PyCall.jl works well with Python. It doesn't need any more installation and configuration.
 
 Run `using Python` and start Python at backend, then:
 
